@@ -1,0 +1,107 @@
+[
+  {
+    "patternText": "Your policy has been suspended. Click here to reactivate immediately or pay penalty",
+    "patternCategory": "POLICY_SUSPENSION",
+    "riskLevel": "HIGH",
+    "keywords": ["suspended", "reactivate", "penalty", "click here"],
+    "regexPattern": ".*(suspend|block|deactivat).*(policy|insurance).*(click|link|reactivat).*"
+  },
+  {
+    "patternText": "Congratulations! You have won a cashback of Rs 50,000 on your insurance premium. Claim now",
+    "patternCategory": "FAKE_CASHBACK",
+    "riskLevel": "HIGH",
+    "keywords": ["congratulations", "won", "cashback", "claim now"],
+    "regexPattern": ".*(congratulation|won|winner).*(cashback|prize|reward).*(claim|collect).*"
+  },
+  {
+    "patternText": "URGENT: Your claim has been rejected. Pay Rs 5,000 processing fee to appeal",
+    "patternCategory": "FAKE_CLAIM_REJECTION",
+    "riskLevel": "HIGH",
+    "keywords": ["urgent", "rejected", "processing fee", "appeal"],
+    "regexPattern": ".*(urgent|immediate).*(claim|policy).*(reject|denied).*(fee|payment).*"
+  },
+  {
+    "patternText": "KYC update required for your insurance policy. Share Aadhaar and PAN details",
+    "patternCategory": "KYC_PHISHING",
+    "riskLevel": "HIGH",
+    "keywords": ["kyc", "update required", "aadhaar", "pan"],
+    "regexPattern": ".*(kyc|verification).*(update|required).*(aadhaar|pan|otp).*"
+  },
+  {
+    "patternText": "Your insurance agent has changed. Contact new agent at +91-XXXXXXXXXX for policy details",
+    "patternCategory": "AGENT_IMPERSONATION",
+    "riskLevel": "MEDIUM",
+    "keywords": ["agent changed", "new agent", "contact"],
+    "regexPattern": ".*(agent|advisor).*(chang|new|replac).*(contact|call).*"
+  },
+  {
+    "patternText": "IRDAI notice: Your policy is under investigation. Respond within 24 hours to avoid cancellation",
+    "patternCategory": "FAKE_REGULATOR",
+    "riskLevel": "HIGH",
+    "keywords": ["irdai", "investigation", "24 hours", "cancellation"],
+    "regexPattern": ".*(irdai|regulator|authority).*(investigation|notice|warning).*(cancel|suspend).*"
+  },
+  {
+    "patternText": "Get 80% discount on health insurance. Limited time offer. Buy now at www.fake-insurance.com",
+    "patternCategory": "FAKE_DISCOUNT",
+    "riskLevel": "MEDIUM",
+    "keywords": ["discount", "limited time", "buy now"],
+    "regexPattern": ".*([0-9]+%).*(discount|offer).*(limited|hurry|now).*"
+  },
+  {
+    "patternText": "Your policy premium is overdue. Pay immediately to avoid legal action and credit score impact",
+    "patternCategory": "FAKE_OVERDUE",
+    "riskLevel": "HIGH",
+    "keywords": ["overdue", "legal action", "credit score"],
+    "regexPattern": ".*(overdue|pending|due).*(legal|court|action).*(credit|cibil).*"
+  },
+  {
+    "patternText": "Free health checkup for policyholders. Book appointment and share policy number",
+    "patternCategory": "DATA_HARVESTING",
+    "riskLevel": "MEDIUM",
+    "keywords": ["free", "health checkup", "policy number"],
+    "regexPattern": ".*(free|complimentary).*(checkup|test|screening).*(policy|details).*"
+  },
+  {
+    "patternText": "Your claim of Rs 2,00,000 has been approved. Pay 2% processing fee to receive amount",
+    "patternCategory": "ADVANCE_FEE_FRAUD",
+    "riskLevel": "HIGH",
+    "keywords": ["claim approved", "processing fee", "receive amount"],
+    "regexPattern": ".*(claim|amount).*(approv|sanction).*(fee|charge|payment).*"
+  },
+  {
+    "patternText": "Digital arrest warrant issued in your name for insurance fraud. Join video call immediately",
+    "patternCategory": "DIGITAL_ARREST",
+    "riskLevel": "CRITICAL",
+    "keywords": ["arrest warrant", "insurance fraud", "video call", "immediately"],
+    "regexPattern": ".*(arrest|warrant|police|cbi).*(fraud|crime).*(video|call|zoom).*"
+  },
+  {
+    "patternText": "CBI officer calling. Your insurance claim is linked to money laundering. Do not disconnect",
+    "patternCategory": "DIGITAL_ARREST",
+    "riskLevel": "CRITICAL",
+    "keywords": ["cbi", "money laundering", "do not disconnect"],
+    "regexPattern": ".*(cbi|police|officer).*(laundering|crime|fraud).*(disconnect|hang).*"
+  },
+  {
+    "patternText": "Supreme Court order: Your policy is under investigation. Transfer funds to safe account",
+    "patternCategory": "DIGITAL_ARREST",
+    "riskLevel": "CRITICAL",
+    "keywords": ["supreme court", "investigation", "transfer funds", "safe account"],
+    "regexPattern": ".*(court|judge|legal).*(investigation|order).*(transfer|move|safe).*"
+  },
+  {
+    "patternText": "Insurance Ombudsman: Your complaint has been escalated. Pay Rs 10,000 to expedite resolution",
+    "patternCategory": "FAKE_OMBUDSMAN",
+    "riskLevel": "HIGH",
+    "keywords": ["ombudsman", "complaint", "pay", "expedite"],
+    "regexPattern": ".*(ombudsman|grievance).*(complaint|dispute).*(pay|fee|expedite).*"
+  },
+  {
+    "patternText": "Your policy documents are expiring. Download updated documents from this link",
+    "patternCategory": "MALWARE_LINK",
+    "riskLevel": "HIGH",
+    "keywords": ["documents expiring", "download", "link"],
+    "regexPattern": ".*(document|certificate).*(expir|invalid).*(download|click|link).*"
+  }
+]

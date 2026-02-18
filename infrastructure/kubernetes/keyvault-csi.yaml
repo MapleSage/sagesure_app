@@ -1,0 +1,103 @@
+# Azure Key Vault Provider for Secrets Store CSI Driver
+# Requirements: 2.4
+# Task 2.3: Configure Azure Key Vault access policies
+
+---
+# SecretProviderClass for application secrets
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: sagesure-keyvault-secrets
+  namespace: sagesure
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: ""  # Will be populated with AKS kubelet identity
+    keyvaultName: "sagesure-india-kv"
+    cloudName: ""
+    objects: |
+      array:
+        - |
+          objectName: postgres-connection-string
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: redis-connection-string
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: storage-connection-string
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: appinsights-connection-string
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: document-encryption-key
+          objectType: key
+          objectVersion: ""
+    tenantId: ""  # Will be populated during deployment
+  secretObjects:
+    - secretName: sagesure-secrets
+      type: Opaque
+      data:
+        - objectName: postgres-connection-string
+          key: POSTGRES_CONNECTION_STRING
+        - objectName: redis-connection-string
+          key: REDIS_CONNECTION_STRING
+        - objectName: storage-connection-string
+          key: STORAGE_CONNECTION_STRING
+        - objectName: appinsights-connection-string
+          key: APPINSIGHTS_CONNECTION_STRING
+
+---
+# Example pod using Key Vault secrets
+# This is a template showing how to mount secrets from Key Vault
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sagesure-api-example
+  namespace: sagesure
+  labels:
+    app: sagesure-api
+spec:
+  serviceAccountName: sagesure-api
+  containers:
+    - name: api
+      image: sagesureacr.azurecr.io/sagesure-api:latest
+      volumeMounts:
+        - name: secrets-store
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      env:
+        # Environment variables populated from mounted secrets
+        - name: POSTGRES_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: sagesure-secrets
+              key: POSTGRES_CONNECTION_STRING
+        - name: REDIS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: sagesure-secrets
+              key: REDIS_CONNECTION_STRING
+        - name: STORAGE_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: sagesure-secrets
+              key: STORAGE_CONNECTION_STRING
+        - name: APPINSIGHTS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: sagesure-secrets
+              key: APPINSIGHTS_CONNECTION_STRING
+  volumes:
+    - name: secrets-store
+      csi:
+        driver: secrets-store.csi.k8s.io
+        readOnly: true
+        volumeAttributes:
+          secretProviderClass: "sagesure-keyvault-secrets"

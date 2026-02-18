@@ -1,0 +1,286 @@
+# Role-Based Access Control (RBAC) Configuration
+# Requirements: 2.2, 2.4
+# Task 2.3: Implement RBAC for AKS cluster
+
+---
+# Service Account for API pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sagesure-api
+  namespace: sagesure
+  labels:
+    app: sagesure-api
+
+---
+# Service Account for worker pods
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sagesure-worker
+  namespace: sagesure
+  labels:
+    app: sagesure-worker
+
+---
+# Service Account for monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sagesure-monitoring
+  namespace: sagesure
+  labels:
+    app: sagesure-monitoring
+
+---
+# Role for API pods - minimal permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagesure-api-role
+  namespace: sagesure
+rules:
+  # Allow reading ConfigMaps for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  # Allow reading Secrets for credentials
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  # Allow reading own pod information
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for API pods
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagesure-api-rolebinding
+  namespace: sagesure
+subjects:
+  - kind: ServiceAccount
+    name: sagesure-api
+    namespace: sagesure
+roleRef:
+  kind: Role
+  name: sagesure-api-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Role for worker pods - minimal permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagesure-worker-role
+  namespace: sagesure
+rules:
+  # Allow reading ConfigMaps for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  # Allow reading Secrets for credentials
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list"]
+  # Allow reading own pod information
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+
+---
+# RoleBinding for worker pods
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagesure-worker-rolebinding
+  namespace: sagesure
+subjects:
+  - kind: ServiceAccount
+    name: sagesure-worker
+    namespace: sagesure
+roleRef:
+  kind: Role
+  name: sagesure-worker-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ClusterRole for monitoring - read-only access to cluster resources
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sagesure-monitoring-clusterrole
+rules:
+  # Allow reading nodes
+  - apiGroups: [""]
+    resources: ["nodes", "nodes/stats", "nodes/metrics"]
+    verbs: ["get", "list", "watch"]
+  # Allow reading pods across all namespaces
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch"]
+  # Allow reading services
+  - apiGroups: [""]
+    resources: ["services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  # Allow reading deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch"]
+
+---
+# ClusterRoleBinding for monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sagesure-monitoring-clusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: sagesure-monitoring
+    namespace: sagesure
+roleRef:
+  kind: ClusterRole
+  name: sagesure-monitoring-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Role for CI/CD deployment - allows deploying applications
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: sagesure-deployer-role
+  namespace: sagesure
+rules:
+  # Allow managing deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Allow managing services
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Allow managing ConfigMaps and Secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Allow managing pods
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list", "watch", "delete"]
+  # Allow managing ingress
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Allow managing HPA
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+# Service Account for CI/CD
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sagesure-deployer
+  namespace: sagesure
+  labels:
+    app: sagesure-deployer
+
+---
+# RoleBinding for CI/CD deployment
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: sagesure-deployer-rolebinding
+  namespace: sagesure
+subjects:
+  - kind: ServiceAccount
+    name: sagesure-deployer
+    namespace: sagesure
+roleRef:
+  kind: Role
+  name: sagesure-deployer-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Note: PodSecurityPolicy is deprecated in Kubernetes 1.25+
+# Use Pod Security Standards instead (see pod-security-standards.yaml)
+# The following PSP configuration is kept for reference but should not be applied
+# on Kubernetes 1.25+ clusters
+
+# PodSecurityPolicy for API pods (restricted) - DEPRECATED
+# apiVersion: policy/v1beta1
+# kind: PodSecurityPolicy
+# metadata:
+#   name: sagesure-restricted
+#   annotations:
+#     seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+#     apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+# spec:
+#   privileged: false
+#   allowPrivilegeEscalation: false
+#   requiredDropCapabilities:
+#     - ALL
+#   volumes:
+#     - 'configMap'
+#     - 'emptyDir'
+#     - 'projected'
+#     - 'secret'
+#     - 'downwardAPI'
+#     - 'persistentVolumeClaim'
+#   hostNetwork: false
+#   hostIPC: false
+#   hostPID: false
+#   runAsUser:
+#     rule: 'MustRunAsNonRoot'
+#   seLinux:
+#     rule: 'RunAsAny'
+#   supplementalGroups:
+#     rule: 'RunAsAny'
+#   fsGroup:
+#     rule: 'RunAsAny'
+#   readOnlyRootFilesystem: false
+
+# ClusterRole for using the restricted PSP - DEPRECATED
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: ClusterRole
+# metadata:
+#   name: sagesure-psp-restricted
+# rules:
+#   - apiGroups: ['policy']
+#     resources: ['podsecuritypolicies']
+#     verbs: ['use']
+#     resourceNames:
+#       - sagesure-restricted
+
+# RoleBinding for API pods to use restricted PSP - DEPRECATED
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: sagesure-api-psp
+#   namespace: sagesure
+# roleRef:
+#   kind: ClusterRole
+#   name: sagesure-psp-restricted
+#   apiGroup: rbac.authorization.k8s.io
+# subjects:
+#   - kind: ServiceAccount
+#     name: sagesure-api
+#     namespace: sagesure
+
+# RoleBinding for worker pods to use restricted PSP - DEPRECATED
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: sagesure-worker-psp
+#   namespace: sagesure
+# roleRef:
+#   kind: ClusterRole
+#   name: sagesure-psp-restricted
+#   apiGroup: rbac.authorization.k8s.io
+# subjects:
+#   - kind: ServiceAccount
+#     name: sagesure-worker
+#     namespace: sagesure

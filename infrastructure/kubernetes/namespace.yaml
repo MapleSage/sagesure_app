@@ -1,0 +1,10 @@
+# Namespace for SageSure India Platform
+# Requirements: 2.2, 2.4
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sagesure
+  labels:
+    name: sagesure
+    environment: production
+    project: sagesure-india

@@ -1,0 +1,119 @@
+# Pod Security Standards Configuration
+# Requirements: 2.2, 2.4
+# Task 2.3: Implement Pod Security Standards for AKS cluster
+# Note: PodSecurityPolicy is deprecated in Kubernetes 1.25+, replaced with Pod Security Standards
+
+---
+# Namespace label for Pod Security Standards enforcement
+# This enforces the 'restricted' policy at the namespace level
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sagesure
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# SecurityContext configuration for API pods
+# This demonstrates the required security context for restricted policy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-config
+  namespace: sagesure
+data:
+  security-context.yaml: |
+    # Required security context for restricted Pod Security Standard
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    
+    # Container security context
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      runAsNonRoot: true
+      runAsUser: 1000
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+      readOnlyRootFilesystem: false
+
+---
+# Example deployment with proper security context
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sagesure-api-secure-example
+  namespace: sagesure
+  labels:
+    app: sagesure-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: sagesure-api
+  template:
+    metadata:
+      labels:
+        app: sagesure-api
+    spec:
+      serviceAccountName: sagesure-api
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: sagesureacr.azurecr.io/sagesure-api:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
+            readOnlyRootFilesystem: false
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: secrets-store
+              mountPath: "/mnt/secrets-store"
+              readOnly: true
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "sagesure-keyvault-secrets"

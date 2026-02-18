@@ -1,0 +1,320 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Note: pgvector extension will be enabled via migration
+  // Run: CREATE EXTENSION IF NOT EXISTS vector;
+}
+
+// ============================================================================
+// Core Tables - Authentication, Authorization, and Compliance
+// ============================================================================
+
+/// User accounts with role-based access control
+/// Supports Consumer, Broker, Agent, Insurer, Regulator, Admin roles
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  role          String    @db.VarChar(50)
+  phone         String?   @db.VarChar(20)
+  name          String?   @db.VarChar(255)
+  mfaEnabled    Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret     String?   @map("mfa_secret") @db.VarChar(255)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  lastLogin     DateTime? @map("last_login") @db.Timestamp(6)
+
+  // Relations
+  refreshTokens RefreshToken[]
+  auditTrail    AuditTrail[]
+  consentLog    ConsentLog[]
+
+  @@map("users")
+}
+
+/// Refresh tokens for JWT authentication
+/// Tokens expire after 30 days and are stored hashed
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tokenHash String   @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime @map("expires_at") @db.Timestamp(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+/// Audit trail for all user actions and system events
+/// Tracks authentication attempts, resource access, and data modifications
+model AuditTrail {
+  auditId      String    @id @default(dbgenerated("gen_random_uuid()")) @map("audit_id") @db.Uuid
+  userId       String?   @map("user_id") @db.Uuid
+  actionType   String    @map("action_type") @db.VarChar(100)
+  resourceType String?   @map("resource_type") @db.VarChar(100)
+  resourceId   String?   @map("resource_id") @db.VarChar(255)
+  ipAddress    String?   @map("ip_address") @db.Inet
+  userAgent    String?   @map("user_agent") @db.Text
+  outcome      String?   @db.VarChar(50)
+  details      Json?     @db.JsonB
+  hash         String    @db.VarChar(64)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([actionType])
+  @@map("audit_trail")
+}
+
+/// Consent log for DPDP Act 2023 compliance
+/// Tracks user consent for data processing purposes
+model ConsentLog {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  purpose     String    @db.VarChar(255)
+  consentGiven Boolean  @map("consent_given")
+  consentText String    @map("consent_text") @db.Text
+  grantedAt   DateTime? @map("granted_at") @db.Timestamp(6)
+  revokedAt   DateTime? @map("revoked_at") @db.Timestamp(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("consent_log")
+}
+
+// ============================================================================
+// ScamShield Module - Consumer Protection and Scam Detection
+// ============================================================================
+
+/// Scam patterns database for real-time message analysis
+/// Contains 10,000+ known scam patterns with full-text search
+model ScamPattern {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  patternText     String   @map("pattern_text") @db.Text
+  patternCategory String   @map("pattern_category") @db.VarChar(100)
+  riskLevel       String   @map("risk_level") @db.VarChar(20)
+  keywords        String[]
+  regexPattern    String?  @map("regex_pattern") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@index([patternCategory])
+  @@map("scam_patterns")
+}
+
+/// Digital arrest scam incidents with deepfake analysis
+/// Tracks video call scams impersonating law enforcement
+model DigitalArrestIncident {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String?   @map("user_id") @db.Uuid
+  videoUrl         String?   @map("video_url") @db.Text
+  isDeepfake       Boolean?  @map("is_deepfake")
+  confidenceScore  Decimal?  @map("confidence_score") @db.Decimal(5, 2)
+  anomalies        Json?     @db.JsonB
+  scammerContact   String?   @map("scammer_contact") @db.VarChar(255)
+  amountInvolved   Decimal?  @map("amount_involved") @db.Decimal(15, 2)
+  reportedTo1930   Boolean   @default(false) @map("reported_to_1930")
+  reportReference  String?   @map("report_reference") @db.VarChar(100)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("digital_arrest_incidents")
+}
+
+/// Telemarketer registry with TRAI DND integration
+/// Verifies phone numbers against known scammers and verified brands
+model TelemarketerRegistry {
+  phoneNumber   String    @id @map("phone_number") @db.VarChar(20)
+  brandName     String?   @map("brand_name") @db.VarChar(255)
+  isVerified    Boolean   @default(false) @map("is_verified")
+  isScammer     Boolean   @default(false) @map("is_scammer")
+  isDnd         Boolean   @default(false) @map("is_dnd")
+  reportCount   Int       @default(0) @map("report_count")
+  lastVerified  DateTime? @map("last_verified") @db.Timestamp(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("telemarketer_registry")
+}
+
+/// Verified insurance brands with official contact channels
+/// Helps users distinguish legitimate insurers from scammers
+model VerifiedBrand {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  brandName          String    @unique @map("brand_name") @db.VarChar(255)
+  officialContacts   Json      @map("official_contacts") @db.JsonB
+  verificationStatus String    @map("verification_status") @db.VarChar(50)
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamp(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("verified_brands")
+}
+
+/// User-reported scam incidents
+/// Tracks scam reports for 1930 helpline integration
+model ScamReport {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String?   @map("user_id") @db.Uuid
+  scamType         String    @map("scam_type") @db.VarChar(100)
+  scammerContact   String?   @map("scammer_contact") @db.VarChar(255)
+  amountInvolved   Decimal?  @map("amount_involved") @db.Decimal(15, 2)
+  description      String?   @db.Text
+  evidenceUrls     String[]  @map("evidence_urls")
+  reportedTo1930   Boolean   @default(false) @map("reported_to_1930")
+  reportReference  String?   @map("report_reference") @db.VarChar(100)
+  status           String?   @db.VarChar(50)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+
+  @@map("scam_reports")
+}
+
+/// Family alert notifications for high-risk scam detections
+/// Sends SMS and WhatsApp alerts to designated family members
+model FamilyAlert {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  familyMemberId  String   @map("family_member_id") @db.Uuid
+  alertType       String   @map("alert_type") @db.VarChar(100)
+  alertMessage    String   @map("alert_message") @db.Text
+  sentAt          DateTime @default(now()) @map("sent_at") @db.Timestamp(6)
+  acknowledged    Boolean  @default(false)
+
+  @@map("family_alerts")
+}
+
+/// Family members designated to receive scam alerts
+/// Stores contact information and alert preferences
+model FamilyMember {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  name         String   @db.VarChar(255)
+  relationship String   @db.VarChar(100)
+  phone        String   @db.VarChar(20)
+  email        String?  @db.VarChar(255)
+  alertsEnabled Boolean @default(true) @map("alerts_enabled")
+  dailyAlertCount Int   @default(0) @map("daily_alert_count")
+  lastAlertDate DateTime? @map("last_alert_date") @db.Date
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  @@index([userId])
+  @@map("family_members")
+}
+
+// ============================================================================
+// Policy Pulse Module - Policy Understanding and Analysis
+// ============================================================================
+
+/// Insurance policies uploaded by users
+/// Stores parsed policy metadata and links to original PDFs
+model Policy {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  insurerName     String    @map("insurer_name") @db.VarChar(255)
+  policyNumber    String    @map("policy_number") @db.VarChar(100)
+  policyType      String    @map("policy_type") @db.VarChar(100)
+  issueDate       DateTime? @map("issue_date") @db.Date
+  expiryDate      DateTime? @map("expiry_date") @db.Date
+  sumAssured      Decimal?  @map("sum_assured") @db.Decimal(15, 2)
+  premium         Decimal?  @db.Decimal(15, 2)
+  originalPdfUrl  String?   @map("original_pdf_url") @db.Text
+  parsedData      Json?     @map("parsed_data") @db.JsonB
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  // Relations
+  ontology     PolicyOntology[]
+  translations PolicyTranslation[]
+  redFlags     RedFlag[]
+  comparisons  CoverageComparison[]
+
+  @@index([userId])
+  @@index([expiryDate])
+  @@map("policies")
+}
+
+/// Normalized policy ontology for coverage comparison
+/// Standardizes policy features across different insurers
+model PolicyOntology {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId         String    @map("policy_id") @db.Uuid
+  coverageFeatures Json      @map("coverage_features") @db.JsonB
+  exclusions       String[]
+  waitingPeriods   Json      @map("waiting_periods") @db.JsonB
+  subLimits        Json      @map("sub_limits") @db.JsonB
+  coPayment        Decimal?  @map("co_payment") @db.Decimal(5, 2)
+  roomRentLimit    Decimal?  @map("room_rent_limit") @db.Decimal(10, 2)
+  normalizedAt     DateTime  @default(now()) @map("normalized_at") @db.Timestamp(6)
+
+  // Relations
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@map("policy_ontology")
+}
+
+/// Plain language policy translations
+/// Supports Hindi, Tamil, Telugu, Marathi, Bengali, Gujarati
+model PolicyTranslation {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId            String   @map("policy_id") @db.Uuid
+  language            String   @db.VarChar(10)
+  summary             String?  @db.Text
+  keyPoints           String[] @map("key_points")
+  exclusionsHighlight String[] @map("exclusions_highlight")
+  simplifiedTerms     Json     @map("simplified_terms") @db.JsonB
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@map("policy_translations")
+}
+
+/// Red flags indicating potential mis-selling
+/// Detects excessive exclusions, high premiums, restrictive terms
+model RedFlag {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  policyId       String   @map("policy_id") @db.Uuid
+  flagType       String   @map("flag_type") @db.VarChar(100)
+  severity       String   @db.VarChar(20)
+  description    String?  @db.Text
+  policyClause   String?  @map("policy_clause") @db.Text
+  recommendation String?  @db.Text
+  detectedAt     DateTime @default(now()) @map("detected_at") @db.Timestamp(6)
+
+  // Relations
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  @@map("red_flags")
+}
+
+/// Coverage comparison reports
+/// Compares user's policy against similar offerings from other insurers
+model CoverageComparison {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userPolicyId      String   @map("user_policy_id") @db.Uuid
+  comparedPolicies  Json     @map("compared_policies") @db.JsonB
+  comparisonData    Json     @map("comparison_data") @db.JsonB
+  recommendation    Json     @db.JsonB
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // Relations
+  policy Policy @relation(fields: [userPolicyId], references: [id])
+
+  @@map("coverage_comparisons")
+}

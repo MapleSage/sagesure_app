@@ -1,0 +1,55 @@
+# SageSure India Platform - Terraform Variables Example
+# Copy this file to terraform.tfvars and update with your values
+
+# Resource Group Configuration
+resource_group_name = "sagesure-india-rg"
+location            = "southeastasia" # Options: southeastasia, centralindia, southindia
+
+# Environment
+environment  = "prod" # Options: dev, staging, prod
+project_name = "sagesure-india"
+
+# AKS Cluster Configuration
+aks_cluster_name   = "sagesure-aks-prod"
+kubernetes_version = "1.27" # Check available versions: az aks get-versions --location southeastasia
+
+# Node Configuration
+# Requirement 23.2: 3-node cluster with D4s_v3 instances (4 vCPU, 16GB RAM)
+aks_node_count      = 3
+aks_node_vm_size    = "Standard_D4s_v3"
+aks_node_disk_size_gb = 128
+
+# Autoscaling Configuration
+# Requirement 23.3: Auto-scale from 2-10 nodes
+aks_min_node_count = 2
+aks_max_node_count = 10
+
+# Networking
+vnet_address_space           = ["10.0.0.0/16"]
+aks_subnet_address_prefix    = "10.0.1.0/24"
+database_subnet_address_prefix = "10.0.2.0/24"
+
+# Horizontal Pod Autoscaler Configuration
+# Requirement 23.3: 70% CPU, 80% memory thresholds
+hpa_cpu_threshold    = 70
+hpa_memory_threshold = 80
+hpa_min_replicas     = 2
+hpa_max_replicas     = 10
+
+# Let's Encrypt Configuration
+letsencrypt_email       = "admin@sagesure.in" # Update with your email
+letsencrypt_environment = "production"         # Options: staging, production
+
+# Tags
+tags = {
+  Project     = "SageSure India"
+  Environment = "Production"
+  ManagedBy   = "Terraform"
+  Owner       = "Platform Team"
+  CostCenter  = "Engineering"
+}
+
+# PostgreSQL Configuration
+# IMPORTANT: Set a strong password in your actual terraform.tfvars file
+postgres_admin_username = "sagesure_admin"
+postgres_admin_password = "CHANGE_ME_TO_STRONG_PASSWORD" # Must be at least 8 characters

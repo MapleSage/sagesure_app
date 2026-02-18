@@ -1,0 +1,49 @@
+# Helm values for Azure Key Vault Provider for Secrets Store CSI Driver
+# Requirements: 2.4
+# Task 2.3: Configure Azure Key Vault CSI Driver
+
+# Installation command:
+# helm repo add csi-secrets-store-provider-azure https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
+# helm install csi-secrets-store-provider-azure/csi-secrets-store-provider-azure \
+#   --namespace kube-system \
+#   --set secrets-store-csi-driver.syncSecret.enabled=true \
+#   --set secrets-store-csi-driver.enableSecretRotation=true \
+#   --set secrets-store-csi-driver.rotationPollInterval=2m \
+#   -f keyvault-csi-driver-values.yaml
+
+# Enable secret rotation
+secrets-store-csi-driver:
+  syncSecret:
+    enabled: true
+  enableSecretRotation: true
+  rotationPollInterval: "2m"
+
+# Linux node selector
+linux:
+  enabled: true
+  nodeSelector:
+    kubernetes.io/os: linux
+
+# Resource limits for CSI driver
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+# Enable metrics
+metrics:
+  enabled: true
+  port: 8095
+
+# Log verbosity (0-5, higher is more verbose)
+logVerbosity: 0
+
+# Enable workload identity (recommended for AKS)
+enableWorkloadIdentity: false
+
+# Use managed identity for authentication
+usePodIdentity: false
+useVMManagedIdentity: true
