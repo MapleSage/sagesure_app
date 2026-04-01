@@ -1,6 +1,6 @@
 -- Enable pgvector extension for vector embeddings
 -- Required for ombudsman precedent matching and policy similarity search
-CREATE EXTENSION IF NOT EXISTS vector;
+-- CREATE EXTENSION IF NOT EXISTS vector; -- Temporarily disabled for testing
 
 -- CreateTable
 CREATE TABLE "users" (

@@ -6,7 +6,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { familyService } from '../services/family.service';
 import { logger } from '../utils/logger';
-import { auditLog } from '../utils/auditLogger';
+import { logAuditTrail } from '../utils/auditLogger';
 
 export class FamilyController {
   /**
@@ -34,7 +34,7 @@ export class FamilyController {
       });
 
       // Audit log
-      await auditLog({
+      await logAuditTrail({
         userId,
         actionType: 'ADD_FAMILY_MEMBER',
         resourceType: 'FAMILY_MEMBER',
@@ -78,7 +78,7 @@ export class FamilyController {
       await familyService.removeFamilyMember(userId, familyMemberId);
 
       // Audit log
-      await auditLog({
+      await logAuditTrail({
         userId,
         actionType: 'REMOVE_FAMILY_MEMBER',
         resourceType: 'FAMILY_MEMBER',

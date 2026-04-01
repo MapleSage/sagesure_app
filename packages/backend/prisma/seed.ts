@@ -135,14 +135,11 @@ async function main() {
     },
   ];
 
-  // Insert core patterns
-  for (const pattern of corePatterns) {
-    await prisma.scamPattern.upsert({
-      where: { id: pattern.patternText }, // Using patternText as unique identifier for upsert
-      update: {},
-      create: pattern,
-    });
-  }
+  // Insert core patterns using createMany
+  await prisma.scamPattern.createMany({
+    data: corePatterns,
+    skipDuplicates: true,
+  });
 
   console.log(`✅ Seeded total ${scamPatterns.length + corePatterns.length} scam patterns`);
 

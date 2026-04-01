@@ -26,7 +26,7 @@ spec:
         prometheus.io/port: "3000"
         prometheus.io/path: "/metrics"
     spec:
-      serviceAccountName: sagesure-backend-sa
+      serviceAccountName: sagesure-api
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
@@ -34,22 +34,22 @@ spec:
         seccompProfile:
           type: RuntimeDefault
 
-      # Init container for database migrations
-      initContainers:
-        - name: db-migrate
-          image: sagesureindiaacr.azurecr.io/sagesure-backend:latest
-          command: ['npx', 'prisma', 'migrate', 'deploy']
-          env:
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: sagesure-secrets
-                  key: database-url
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+      # Init container for database migrations - DISABLED FOR NOW
+      # initContainers:
+      #   - name: db-migrate
+      #     image: sagesureindiaacr.azurecr.io/sagesure-backend:latest
+      #     command: ['npx', 'prisma', 'migrate', 'deploy']
+      #     env:
+      #       - name: DATABASE_URL
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: sagesure-secrets
+      #             key: database-url
+      #     securityContext:
+      #       allowPrivilegeEscalation: false
+      #       capabilities:
+      #         drop:
+      #           - ALL
 
       containers:
         - name: backend
@@ -118,35 +118,35 @@ spec:
               memory: "1Gi"
               cpu: "500m"
 
-          # Liveness probe
+          # Startup probe - gives app time to start
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+
+          # Liveness probe - restarts if unhealthy
           livenessProbe:
             httpGet:
-              path: /health
+              path: /health/live
               port: http
-            initialDelaySeconds: 30
+            initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
 
-          # Readiness probe
+          # Readiness probe - removes from service if not ready
           readinessProbe:
             httpGet:
-              path: /health
+              path: /health/ready
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
-            failureThreshold: 3
-
-          # Startup probe
-          startupProbe:
-            httpGet:
-              path: /health
-              port: http
-            initialDelaySeconds: 0
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 30
+            failureThreshold: 2
 
           # Security context
           securityContext:

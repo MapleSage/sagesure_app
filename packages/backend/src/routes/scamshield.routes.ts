@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { scamShieldController } from '../controllers/scamshield.controller';
+import { whatsappController } from '../controllers/whatsapp.controller';
 import { authenticate } from '../middleware/authenticate';
 import { validate } from '../middleware/validate';
 import { analyzeMessageSchema, verifyPhoneSchema } from '../validation/scamshield.validation';
@@ -68,6 +69,39 @@ router.post(
   authenticate,
   videoUpload.single('video'),
   scamShieldController.analyzeVideo.bind(scamShieldController)
+);
+
+/**
+ * POST /api/v1/scamshield/whatsapp-webhook
+ * Twilio WhatsApp webhook endpoint (no auth - Twilio calls this)
+ */
+router.post(
+  '/whatsapp-webhook',
+  whatsappController.handleWebhook.bind(whatsappController)
+);
+
+/**
+ * POST /api/v1/scamshield/report-1930
+ * Submit a scam report to 1930 helpline
+ *
+ * Authentication: Required
+ */
+router.post(
+  '/report-1930',
+  authenticate,
+  scamShieldController.report1930.bind(scamShieldController)
+);
+
+/**
+ * POST /api/v1/scamshield/report-chakshu
+ * Submit a telecom fraud complaint to TRAI Chakshu
+ *
+ * Authentication: Required
+ */
+router.post(
+  '/report-chakshu',
+  authenticate,
+  scamShieldController.reportChakshu.bind(scamShieldController)
 );
 
 // Mount family alert routes

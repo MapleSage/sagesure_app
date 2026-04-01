@@ -59,4 +59,17 @@ router.post(
   policyPulseController.comparePolicy
 );
 
+// Generate plain language summary
+router.post(
+  '/generate-summary/:policyId',
+  validate(policyPulseValidation.getPolicySchema, 'params'),
+  policyPulseController.generateSummary
+);
+
+// Ask a question about a policy
+router.post(
+  '/ask-question',
+  policyPulseController.askQuestion
+);
+
 export default router;

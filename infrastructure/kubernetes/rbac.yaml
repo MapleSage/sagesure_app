@@ -8,7 +8,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sagesure-api
-  namespace: sagesure
+  namespace: sagesure-india
   labels:
     app: sagesure-api
 
@@ -18,7 +18,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sagesure-worker
-  namespace: sagesure
+  namespace: sagesure-india
   labels:
     app: sagesure-worker
 
@@ -28,7 +28,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sagesure-monitoring
-  namespace: sagesure
+  namespace: sagesure-india
   labels:
     app: sagesure-monitoring
 
@@ -38,7 +38,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: sagesure-api-role
-  namespace: sagesure
+  namespace: sagesure-india
 rules:
   # Allow reading ConfigMaps for configuration
   - apiGroups: [""]
@@ -59,11 +59,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagesure-api-rolebinding
-  namespace: sagesure
+  namespace: sagesure-india
 subjects:
   - kind: ServiceAccount
     name: sagesure-api
-    namespace: sagesure
+    namespace: sagesure-india
 roleRef:
   kind: Role
   name: sagesure-api-role
@@ -75,7 +75,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: sagesure-worker-role
-  namespace: sagesure
+  namespace: sagesure-india
 rules:
   # Allow reading ConfigMaps for configuration
   - apiGroups: [""]
@@ -96,11 +96,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagesure-worker-rolebinding
-  namespace: sagesure
+  namespace: sagesure-india
 subjects:
   - kind: ServiceAccount
     name: sagesure-worker
-    namespace: sagesure
+    namespace: sagesure-india
 roleRef:
   kind: Role
   name: sagesure-worker-role
@@ -139,7 +139,7 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: sagesure-monitoring
-    namespace: sagesure
+    namespace: sagesure-india
 roleRef:
   kind: ClusterRole
   name: sagesure-monitoring-clusterrole
@@ -151,7 +151,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: sagesure-deployer-role
-  namespace: sagesure
+  namespace: sagesure-india
 rules:
   # Allow managing deployments
   - apiGroups: ["apps"]
@@ -184,7 +184,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: sagesure-deployer
-  namespace: sagesure
+  namespace: sagesure-india
   labels:
     app: sagesure-deployer
 
@@ -194,11 +194,11 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: sagesure-deployer-rolebinding
-  namespace: sagesure
+  namespace: sagesure-india
 subjects:
   - kind: ServiceAccount
     name: sagesure-deployer
-    namespace: sagesure
+    namespace: sagesure-india
 roleRef:
   kind: Role
   name: sagesure-deployer-role
@@ -260,7 +260,7 @@ roleRef:
 # kind: RoleBinding
 # metadata:
 #   name: sagesure-api-psp
-#   namespace: sagesure
+#   namespace: sagesure-india
 # roleRef:
 #   kind: ClusterRole
 #   name: sagesure-psp-restricted
@@ -268,14 +268,14 @@ roleRef:
 # subjects:
 #   - kind: ServiceAccount
 #     name: sagesure-api
-#     namespace: sagesure
+#     namespace: sagesure-india
 
 # RoleBinding for worker pods to use restricted PSP - DEPRECATED
 # apiVersion: rbac.authorization.k8s.io/v1
 # kind: RoleBinding
 # metadata:
 #   name: sagesure-worker-psp
-#   namespace: sagesure
+#   namespace: sagesure-india
 # roleRef:
 #   kind: ClusterRole
 #   name: sagesure-psp-restricted
@@ -283,4 +283,4 @@ roleRef:
 # subjects:
 #   - kind: ServiceAccount
 #     name: sagesure-worker
-#     namespace: sagesure
+#     namespace: sagesure-india

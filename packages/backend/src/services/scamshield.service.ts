@@ -4,7 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { ScamAnalysis, ScamPattern } from '../types/scamshield';
+import { ScamAnalysis, ScamPattern, PhoneVerification } from '../types/scamshield';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();

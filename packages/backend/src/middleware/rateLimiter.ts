@@ -39,7 +39,7 @@ export const rateLimiter = rateLimit({
   // Use Redis store for distributed rate limiting
   store: new RedisStore({
     // @ts-expect-error - RedisStore types are not fully compatible
-    client: redisClient,
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
     prefix: 'rl:', // Key prefix in Redis
   }),
 
@@ -94,7 +94,7 @@ export const strictRateLimiter = rateLimit({
   
   store: new RedisStore({
     // @ts-expect-error - RedisStore types are not fully compatible
-    client: redisClient,
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
     prefix: 'rl:strict:',
   }),
 

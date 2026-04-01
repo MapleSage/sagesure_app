@@ -181,7 +181,7 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
 
 ### ScamShield Module
 
-- [x] 8. Implement scam pattern matching engine
+- [-] 8. Implement scam pattern matching engine
   - [x] 8.1 Create scam pattern database seeding
     - Load 10,000+ scam patterns from CSV/JSON into scam_patterns table
     - Create full-text search index on pattern_text using PostgreSQL GIN
@@ -237,8 +237,8 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Test confidence score calculation
     - _Requirements: 3.5, 3.6_
 
-- [ ] 11. Implement 1930 helpline integration
-  - [ ] 11.1 Create 1930 report generation and submission
+- [x] 11. Implement 1930 helpline integration
+  - [x] 11.1 Create 1930 report generation and submission
     - Create POST /api/v1/scamshield/report-1930
     - Generate pre-filled report with incident details
     - Submit to 1930 API with retry logic (3 attempts, exponential backoff)
@@ -246,13 +246,13 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Return reference number on success
     - _Requirements: 3.7, 3.8, 25.1, 25.2, 25.3, 25.4_
   
-  - [ ] 11.2 Implement TRAI Chakshu integration
+  - [x] 11.2 Implement TRAI Chakshu integration
     - Create POST /api/v1/scamshield/report-chakshu
     - Submit telecom fraud complaints to Chakshu API
     - Track report status
     - _Requirements: 25.6, 25.7_
   
-  - [ ] 11.3 Write unit tests for government integrations
+  - [x] 11.3 Write unit tests for government integrations
     - Test 1930 report generation with sample data
     - Test Chakshu submission with sample data
     - Test retry logic on API failures
@@ -278,27 +278,27 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Test notification delivery
     - _Requirements: 3.9_
 
-- [ ] 13. Implement WhatsApp bot integration
-  - [ ] 13.1 Set up Twilio WhatsApp Business API
+- [x] 13. Implement WhatsApp bot integration
+  - [x] 13.1 Set up Twilio WhatsApp Business API
     - Configure Twilio account and WhatsApp sandbox
     - Create webhook endpoint POST /api/v1/scamshield/whatsapp-webhook
     - Handle incoming messages and route to analysis
     - _Requirements: 5.1, 5.2, 5.3_
   
-  - [ ] 13.2 Implement WhatsApp message handling
+  - [x] 13.2 Implement WhatsApp message handling
     - Parse incoming messages (text, images with OCR)
     - Call appropriate analysis endpoints (message, phone, video)
     - Format responses in user's language (Hindi, English, Tamil, Telugu)
     - Return analysis within 10 seconds
     - _Requirements: 5.2, 5.3, 5.4, 5.5, 5.6_
   
-  - [ ] 13.3 Implement message queuing for high load
+  - [x] 13.3 Implement message queuing for high load
     - Use Bull queue for message processing
     - Handle 10,000+ concurrent analyses
     - Queue messages when bot unavailable, process within 1 minute of restoration
     - _Requirements: 5.7, 5.8_
   
-  - [ ] 13.4 Write unit tests for WhatsApp bot
+  - [x] 13.4 Write unit tests for WhatsApp bot
     - Test message parsing and routing
     - Test OCR on image messages
     - Test multi-language responses
@@ -346,14 +346,14 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Test error handling for corrupted PDFs
     - _Requirements: 6.2, 6.8, 6.10_
 
-- [ ] 16. Implement plain language translation
-  - [ ] 16.1 Integrate Sarvam AI for translation
+- [x] 16. Implement plain language translation
+  - [x] 16.1 Integrate Sarvam AI for translation
     - Set up Sarvam AI API client with authentication
     - Create translation service wrapper
     - Implement caching in Redis (7-day TTL)
     - _Requirements: 7.2_
   
-  - [ ] 16.2 Create policy summary generation endpoint
+  - [x] 16.2 Create policy summary generation endpoint
     - Create POST /api/v1/policy-pulse/generate-summary/:policyId
     - Generate plain language summary in English
     - Translate to requested language (Hindi, Tamil, Telugu, Marathi, Bengali, Gujarati)
@@ -363,18 +363,18 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Store translation in policy_translations table
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8_
   
-  - [ ] 16.3 Implement policy Q&A endpoint
+  - [x] 16.3 Implement policy Q&A endpoint
     - Create POST /api/v1/policy-pulse/ask-question
     - Accept policy ID and question in user's language
     - Use Sarvam AI with policy context injection
     - Return answer within 10 seconds
     - _Requirements: 7.9, 7.10_
   
-  - [ ] 16.4 Write property tests for translation
+  - [x] 16.4 Write property tests for translation
     - **Property 10: Translation performance** - For any policy, English summary within 15s, translation within 20s
     - _Requirements: 7.1, 7.2_
   
-  - [ ] 16.5 Write unit tests for translation
+  - [x] 16.5 Write unit tests for translation
     - Test summary generation for sample policies
     - Test translation to all supported languages
     - Test critical term preservation
@@ -482,14 +482,14 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Create protected route wrapper (pending)
     - _Requirements: 1.1, 1.2, 1.8_
   
-  - [ ] 20.3 Create ScamShield UI components
+  - [x] 20.3 Create ScamShield UI components
     - Build message analysis form
     - Build phone verification form
     - Build video upload form for deepfake detection
     - Display risk scores and warnings
     - _Requirements: 3.1, 3.3, 3.5_
   
-  - [ ] 20.4 Create Policy Pulse UI components
+  - [x] 20.4 Create Policy Pulse UI components
     - Build policy PDF upload form
     - Display parsed policy data
     - Display plain language summary with language selector
@@ -497,7 +497,7 @@ Each task builds on previous work, with no orphaned code. Testing tasks are mark
     - Display coverage comparison table
     - _Requirements: 6.1, 7.1, 8.9, 9.4_
   
-  - [ ] 20.5 Write unit tests for frontend components
+  - [x] 20.5 Write unit tests for frontend components
     - Test form validation
     - Test API integration
     - Test error handling

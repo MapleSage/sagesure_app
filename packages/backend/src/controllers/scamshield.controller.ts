@@ -7,8 +7,9 @@ import { Request, Response, NextFunction } from 'express';
 import { scamShieldService } from '../services/scamshield.service';
 import { familyService } from '../services/family.service';
 import * as deepfakeService from '../services/deepfake.service';
+import { governmentIntegrationService } from '../services/governmentIntegration.service';
 import { logger } from '../utils/logger';
-import { auditLog } from '../utils/auditLogger';
+import { logAuditTrail as auditLog } from '../utils/auditLogger';
 
 export class ScamShieldController {
   /**
@@ -236,6 +237,172 @@ export class ScamShieldController {
       });
     } catch (error) {
       logger.error('Error in analyzeVideo controller', { error });
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/scamshield/report-1930
+   * Submit a scam report to 1930 helpline
+   */
+  async report1930(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+        return;
+      }
+
+      const {
+        scamType,
+        scammerContact,
+        amountInvolved,
+        description,
+        evidenceUrls,
+        incidentDateTime,
+      } = req.body;
+
+      // Validate required fields
+      if (!scamType || !description) {
+        res.status(400).json({
+          success: false,
+          error: 'scamType and description are required',
+        });
+        return;
+      }
+
+      const startTime = Date.now();
+
+      // Submit report to 1930
+      const result = await governmentIntegrationService.report1930({
+        userId,
+        scamType,
+        scammerContact,
+        amountInvolved: amountInvolved ? parseFloat(amountInvolved) : undefined,
+        description,
+        evidenceUrls: evidenceUrls || [],
+        incidentDateTime: incidentDateTime ? new Date(incidentDateTime) : new Date(),
+      });
+
+      const duration = Date.now() - startTime;
+
+      // Audit log
+      await auditLog({
+        userId,
+        actionType: '1930_REPORT',
+        resourceType: 'SCAM_REPORT',
+        resourceId: result.reportId,
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown',
+        outcome: result.success ? 'SUCCESS' : 'FAILED',
+        details: {
+          scamType,
+          referenceNumber: result.referenceNumber,
+          duration,
+        },
+      });
+
+      res.status(result.success ? 200 : 500).json({
+        success: result.success,
+        data: result.success ? {
+          referenceNumber: result.referenceNumber,
+          reportId: result.reportId,
+          message: result.message,
+        } : undefined,
+        error: !result.success ? result.message : undefined,
+      });
+    } catch (error) {
+      logger.error('Error in report1930 controller', { error });
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/v1/scamshield/report-chakshu
+   * Submit a telecom fraud complaint to TRAI Chakshu
+   */
+  async reportChakshu(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Authentication required',
+        });
+        return;
+      }
+
+      const {
+        phoneNumber,
+        complaintType,
+        description,
+        callDateTime,
+      } = req.body;
+
+      // Validate required fields
+      if (!phoneNumber || !complaintType || !description) {
+        res.status(400).json({
+          success: false,
+          error: 'phoneNumber, complaintType, and description are required',
+        });
+        return;
+      }
+
+      // Validate complaint type
+      const validComplaintTypes = ['TELEMARKETING', 'FINANCIAL_FRAUD', 'PHISHING', 'OTHER'];
+      if (!validComplaintTypes.includes(complaintType)) {
+        res.status(400).json({
+          success: false,
+          error: `Invalid complaintType. Must be one of: ${validComplaintTypes.join(', ')}`,
+        });
+        return;
+      }
+
+      const startTime = Date.now();
+
+      // Submit complaint to Chakshu
+      const result = await governmentIntegrationService.reportChakshu({
+        userId,
+        phoneNumber,
+        complaintType,
+        description,
+        callDateTime: callDateTime ? new Date(callDateTime) : undefined,
+      });
+
+      const duration = Date.now() - startTime;
+
+      // Audit log
+      await auditLog({
+        userId,
+        actionType: 'CHAKSHU_REPORT',
+        resourceType: 'TELECOM_COMPLAINT',
+        resourceId: phoneNumber,
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.get('user-agent') || 'unknown',
+        outcome: result.success ? 'SUCCESS' : 'FAILED',
+        details: {
+          phoneNumber,
+          complaintType,
+          referenceNumber: result.referenceNumber,
+          duration,
+        },
+      });
+
+      res.status(result.success ? 200 : 500).json({
+        success: result.success,
+        data: result.success ? {
+          referenceNumber: result.referenceNumber,
+          message: result.message,
+        } : undefined,
+        error: !result.success ? result.message : undefined,
+      });
+    } catch (error) {
+      logger.error('Error in reportChakshu controller', { error });
       next(error);
     }
   }

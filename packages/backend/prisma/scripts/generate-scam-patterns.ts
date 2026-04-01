@@ -132,7 +132,7 @@ const patternTemplates = [
     category: 'FAKE_DISCOUNT',
     riskLevel: 'MEDIUM',
     baseKeywords: ['discount', 'offer', 'limited', 'sale', 'hurry'],
-    regexPattern': '.*([0-9]+%).*(discount|offer).*(limited|hurry|now).*',
+    regexPattern: '.*([0-9]+%).*(discount|offer).*(limited|hurry|now).*',
   },
   // Fake Overdue (500 variations)
   {

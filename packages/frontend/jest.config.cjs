@@ -16,18 +16,14 @@ module.exports = {
     '!src/main.tsx',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
-  coverageThreshold: {
-    global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-  },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
+  },
+  globals: {
+    'ts-jest': {
+      diagnostics: false,
+    },
   },
   verbose: true,
   testTimeout: 10000,

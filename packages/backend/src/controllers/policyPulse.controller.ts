@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as policyPulseService from '../services/policyPulse.service';
+import { translationService } from '../services/translation.service';
 import { logger } from '../utils/logger';
-import { logAudit } from '../utils/auditLogger';
+import { logAuditTrail as logAudit } from '../utils/auditLogger';
 
 /**
  * Upload and parse policy PDF
@@ -310,6 +311,95 @@ export async function comparePolicy(req: Request, res: Response, next: NextFunct
     });
   } catch (error) {
     logger.error('Policy comparison error', { error, userId: req.user?.userId });
+    next(error);
+  }
+}
+
+/**
+ * Generate plain language summary for a policy
+ * POST /api/v1/policy-pulse/generate-summary/:policyId
+ */
+export async function generateSummary(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { policyId } = req.params;
+    const { language = 'en' } = req.body;
+
+    if (!policyId) {
+      res.status(400).json({ error: 'Policy ID is required' });
+      return;
+    }
+
+    const validLanguages = ['en', 'hi', 'ta', 'te', 'mr', 'bn', 'gu'];
+    if (!validLanguages.includes(language)) {
+      res.status(400).json({ error: `Invalid language. Supported: ${validLanguages.join(', ')}` });
+      return;
+    }
+
+    const startTime = Date.now();
+    const summary = await translationService.generateSummary(policyId, language);
+    const duration = Date.now() - startTime;
+
+    await logAudit({
+      userId,
+      actionType: 'POLICY_SUMMARY',
+      resourceType: 'policy',
+      resourceId: policyId,
+      outcome: 'SUCCESS',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      details: { language, duration },
+    });
+
+    res.status(200).json({ summary });
+  } catch (error) {
+    logger.error('Generate summary error', { error, userId: req.user?.userId });
+    next(error);
+  }
+}
+
+/**
+ * Answer a question about a policy
+ * POST /api/v1/policy-pulse/ask-question
+ */
+export async function askQuestion(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const { policyId, question, language = 'en' } = req.body;
+
+    if (!policyId || !question) {
+      res.status(400).json({ error: 'policyId and question are required' });
+      return;
+    }
+
+    const startTime = Date.now();
+    const answer = await translationService.askQuestion(policyId, question, language);
+    const duration = Date.now() - startTime;
+
+    await logAudit({
+      userId,
+      actionType: 'POLICY_QA',
+      resourceType: 'policy',
+      resourceId: policyId,
+      outcome: 'SUCCESS',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      details: { language, duration },
+    });
+
+    res.status(200).json({ answer });
+  } catch (error) {
+    logger.error('Ask question error', { error, userId: req.user?.userId });
     next(error);
   }
 }
